@@ -7,7 +7,7 @@ This script will be executed as `ExecStartPre` by the systemd unit of the kubele
 ```bash
 [harshal@localhost dynamic-node]$ ./dynamic-node-sizing.sh true
 [harshal@localhost dynamic-node]$ cat node_sizes.env
-SYSTEM_RESERVED_MEMORY=3.5g
+SYSTEM_RESERVED_MEMORY=3.5Gi
 SYSTEM_RESERVED_CPU=0.09
 ```
 
@@ -18,6 +18,6 @@ When the user doesn't want to use dynamic node sizing, the script can be invoked
 ```bash
 [harshal@localhost dynamic-node]$ ./dynamic-node-sizing.sh false
 [harshal@localhost dynamic-node]$ cat node_sizes.env
-SYSTEM_RESERVED_MEMORY=1g
-SYSTEM_RESERVED_CPU=0.08
+SYSTEM_RESERVED_MEMORY=1Gi
+SYSTEM_RESERVED_CPU=500m
 ```

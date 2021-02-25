@@ -45,7 +45,7 @@ function dynamic_memory_sizing {
         recommended_systemreserved_memory=$(echo $recommended_systemreserved_memory $(echo $total_memory 0.02 | awk '{print $1 * $2}') | awk '{print $1 + $2}')
     fi
 
-    echo "SYSTEM_RESERVED_MEMORY=${recommended_systemreserved_memory}g">> ${NODE_SIZES_ENV}
+    echo "SYSTEM_RESERVED_MEMORY=${recommended_systemreserved_memory}Gi">> ${NODE_SIZES_ENV}
 
 }
 
@@ -107,8 +107,8 @@ function dynamic_node_sizing {
 function static_node_sizing {
     >node_sizes.env
 
-    echo "SYSTEM_RESERVED_MEMORY=1g" >> ${NODE_SIZES_ENV}
-    echo "SYSTEM_RESERVED_CPU=0.08" >> ${NODE_SIZES_ENV}
+    echo "SYSTEM_RESERVED_MEMORY=1Gi" >> ${NODE_SIZES_ENV}
+    echo "SYSTEM_RESERVED_CPU=500m" >> ${NODE_SIZES_ENV}
 }
 
 if [ $1 == "true" ]; then
