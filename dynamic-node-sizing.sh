@@ -5,7 +5,7 @@ NODE_SIZES_ENV="node_sizes.env"
 
 function dynamic_memory_sizing {
     total_memory=$(free -g|awk '/^Mem:/{print $2}')
-    # total_memory=8 test the recommended values by modifying this value
+    total_memory=16 #test the recommended values by modifying this value
 
     recommended_systemreserved_memory=0
 
@@ -51,6 +51,7 @@ function dynamic_memory_sizing {
 
 function dynamic_cpu_sizing {
     total_cpu=$(getconf _NPROCESSORS_ONLN)
+    total_cpu=8
 
     recommended_systemreserved_cpu=0
 
@@ -107,14 +108,18 @@ function dynamic_node_sizing {
 function static_node_sizing {
     >node_sizes.env
 
-    echo "SYSTEM_RESERVED_MEMORY=1Gi" >> ${NODE_SIZES_ENV}
-    echo "SYSTEM_RESERVED_CPU=500m" >> ${NODE_SIZES_ENV}
+    echo "SYSTEM_RESERVED_MEMORY=$1" >> ${NODE_SIZES_ENV}
+    echo "SYSTEM_RESERVED_CPU=$2" >> ${NODE_SIZES_ENV}
 }
 
 if [ $1 == "true" ]; then
     dynamic_node_sizing
 elif [ $1 == "false" ]; then
-    static_node_sizing
+    static_node_sizing 1Gi 500m
+elif [ $1 == "user" ]; then
+    static_node_sizing $2 $3 
 else
     echo "Unrecongnized command line option. Valid options are \"true\" or \"false\""
 fi
+
+cat ${NODE_SIZES_ENV}
