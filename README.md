@@ -2,22 +2,31 @@
 
 This is a prototype of the dynamic node sizing for Openshift. Click [here](https://github.com/openshift/enhancements/pull/642) for more information about the proposed enhancement in Openshift.
 
-This script will be executed as `ExecStartPre` by the systemd unit of the kubelet. The script will generate a file with recommended node sizing values for memory and cpu. e.g.
+This script will be executed as `ExecStartPre` by the systemd unit of the kubelet. The script will generate the recommended node sizing values for system reserved memory and cpus.
+
+Sample output for various values of memory and cpus,
 
 ```bash
-[harshal@localhost dynamic-node]$ ./dynamic-node-sizing.sh true
-[harshal@localhost dynamic-node]$ cat node_sizes.env
-SYSTEM_RESERVED_MEMORY=3.5Gi
-SYSTEM_RESERVED_CPU=0.09
-```
-
-After this the kubelet's systemd will read the file `EnvironmentFile=/etc/kubernetes/node_sizes.env` and load the environment variables . These variables will be used to set kubelet command line argument `--system-reserved=cpu=${SYSTEM_RESERVED_CPU},memory=${SYSTEM_RESERVED_MEMORY}`
-
-When the user doesn't want to use dynamic node sizing, the script can be invoked to generate existing static values.
-
-```bash
-[harshal@localhost dynamic-node]$ ./dynamic-node-sizing.sh false
-[harshal@localhost dynamic-node]$ cat node_sizes.env
-SYSTEM_RESERVED_MEMORY=1Gi
-SYSTEM_RESERVED_CPU=500m
+$ ./dynamic-node-sizing.sh true
+Memory in Gibi 1, SYSTEM_RESERVED_MEMORY=0.25Gi
+Memory in Gibi 2, SYSTEM_RESERVED_MEMORY=0.5Gi
+Memory in Gibi 4, SYSTEM_RESERVED_MEMORY=1Gi
+Memory in Gibi 8, SYSTEM_RESERVED_MEMORY=1.8Gi
+Memory in Gibi 16, SYSTEM_RESERVED_MEMORY=2.6Gi
+Memory in Gibi 32, SYSTEM_RESERVED_MEMORY=3.56Gi
+Memory in Gibi 64, SYSTEM_RESERVED_MEMORY=5.48Gi
+Memory in Gibi 128, SYSTEM_RESERVED_MEMORY=9.32Gi
+Memory in Gibi 256, SYSTEM_RESERVED_MEMORY=11.88Gi
+Memory in Gibi 512, SYSTEM_RESERVED_MEMORY=17Gi
+Memory in Gibi 1024, SYSTEM_RESERVED_MEMORY=27.24Gi
+CPU Count 1, SYSTEM_RESERVED_CPU=0.06
+CPU Count 2, SYSTEM_RESERVED_CPU=0.07
+CPU Count 4, SYSTEM_RESERVED_CPU=0.10
+CPU Count 8, SYSTEM_RESERVED_CPU=0.14
+CPU Count 16, SYSTEM_RESERVED_CPU=0.24
+CPU Count 32, SYSTEM_RESERVED_CPU=0.43
+CPU Count 64, SYSTEM_RESERVED_CPU=0.82
+CPU Count 128, SYSTEM_RESERVED_CPU=1.58
+CPU Count 256, SYSTEM_RESERVED_CPU=3.12
+CPU Count 512, SYSTEM_RESERVED_CPU=6.19
 ```

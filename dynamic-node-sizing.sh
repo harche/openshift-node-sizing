@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
-NODE_SIZES_ENV=${NODE_SIZES_ENV:-/etc/node-sizing.env}
 function dynamic_memory_sizing {
-    total_memory=$(free -g|awk '/^Mem:/{print $2}')
-    # total_memory=8 test the recommended values by modifying this value
+    #total_memory=$(free -g|awk '/^Mem:/{print $2}')
+    total_memory=$1
     recommended_systemreserved_memory=0
     if (($total_memory <= 4)); then # 25% of the first 4GB of memory
         recommended_systemreserved_memory=$(echo $total_memory 0.25 | awk '{print $1 * $2}')
@@ -36,60 +35,45 @@ function dynamic_memory_sizing {
     if (($total_memory >= 0)); then # 2% of any memory above 128GB
         recommended_systemreserved_memory=$(echo $recommended_systemreserved_memory $(echo $total_memory 0.02 | awk '{print $1 * $2}') | awk '{print $1 + $2}')
     fi
-    echo "SYSTEM_RESERVED_MEMORY=${recommended_systemreserved_memory}Gi">> ${NODE_SIZES_ENV}
+    echo "SYSTEM_RESERVED_MEMORY=${recommended_systemreserved_memory}Gi"
 }
+
+
 function dynamic_cpu_sizing {
-    total_cpu=$(getconf _NPROCESSORS_ONLN)
-    recommended_systemreserved_cpu=0
-    if (($total_cpu <= 1)); then # 6% of the first core
-        recommended_systemreserved_cpu=$(echo $total_cpu 0.06 | awk '{print $1 * $2}')
-        total_cpu=0
+    # total_cpu=$(getconf _NPROCESSORS_ONLN)
+    total_cpu=$1
+    # Base allocation for 1 CPU in fractions of a core (60 millicores = 0.06 CPU core)
+    base_allocation_fraction=0.06
+    # Increment per additional CPU in fractions of a core (12 millicores = 0.012 CPU core)
+    increment_per_cpu_fraction=0.012
+
+    if ((total_cpu > 1)); then
+        # Calculate the total system-reserved CPU in fractions, starting with the base allocation
+        # and adding the incremental fraction for each additional CPU
+        recommended_systemreserved_cpu=$(awk -v base="$base_allocation_fraction" -v increment="$increment_per_cpu_fraction" -v cpus="$total_cpu" 'BEGIN {printf "%.2f\n", base + increment * (cpus - 1)}')
     else
-        recommended_systemreserved_cpu=0.06
-        total_cpu=$((total_cpu-1))
+        # For a single CPU, use the base allocation
+        recommended_systemreserved_cpu=$base_allocation_fraction
     fi
-    if (($total_cpu <= 1)); then # 1% of the next core (up to 2 cores)
-        recommended_systemreserved_cpu=$(echo $recommended_systemreserved_cpu $(echo $total_cpu 0.01 | awk '{print $1 * $2}') | awk '{print $1 + $2}')
-        total_cpu=0
-    else
-        recommended_systemreserved_cpu=$(echo $recommended_systemreserved_cpu 0.01 | awk '{print $1 + $2}')
-        total_cpu=$((total_cpu-1))
-    fi
-    if (($total_cpu <= 2)); then # 0.5% of the next 2 cores (up to 4 cores)
-        recommended_systemreserved_cpu=$(echo $recommended_systemreserved_cpu $(echo $total_cpu 0.005 | awk '{print $1 * $2}') | awk '{print $1 + $2}')
-        total_cpu=0
-    else
-        recommended_systemreserved_cpu=$(echo $recommended_systemreserved_cpu 0.01 | awk '{print $1 + $2}')
-        total_cpu=$((total_cpu-2))
-    fi
-    if (($total_cpu >= 0)); then # 0.25% of any cores above 4 cores
-        recommended_systemreserved_cpu=$(echo $recommended_systemreserved_cpu $(echo $total_cpu 0.0025 | awk '{print $1 * $2}') | awk '{print $1 + $2}')
-    fi
-    echo "SYSTEM_RESERVED_CPU=${recommended_systemreserved_cpu}">> ${NODE_SIZES_ENV}
+
+    echo "SYSTEM_RESERVED_CPU=${recommended_systemreserved_cpu}"
 }
-function dynamic_ephemeral_sizing {
-    echo "Not implemented yet"
-}
-function dynamic_pid_sizing {
-    echo "Not implemented yet"
-}
+
 function dynamic_node_sizing {
-    rm -f ${NODE_SIZES_ENV}
-    dynamic_memory_sizing
-    dynamic_cpu_sizing
-    #dynamic_ephemeral_sizing
-    #dynamic_pid_sizing
-}
-function static_node_sizing {
-    rm -f ${NODE_SIZES_ENV}
-    echo "SYSTEM_RESERVED_MEMORY=$1" >> ${NODE_SIZES_ENV}
-    echo "SYSTEM_RESERVED_CPU=$2" >> ${NODE_SIZES_ENV}
+   for ((a=1; a<=1024; a*=2)); do
+    output=$(dynamic_memory_sizing $a)
+    echo "Memory in Gibi $a, $output"
+   done
+
+
+   for ((a=1; a<=512; a*=2)); do
+    output=$(dynamic_cpu_sizing $a)
+    echo "CPU Count $a, $output"
+   done
 }
 
 if [ $1 == "true" ]; then
     dynamic_node_sizing
-elif [ $1 == "false" ]; then
-    static_node_sizing $2 $3
 else
     echo "Unrecongnized command line option. Valid options are \"true\" or \"false\""
 fi
